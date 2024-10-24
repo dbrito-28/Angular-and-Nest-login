@@ -1,19 +1,24 @@
-import { BadRequestException, Injectable, InternalServerErrorException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { createUserDto } from './dto/auth.dto';
-import { encrypt } from 'src/libs/bcrypt';
+import { hash } from 'bcrypt';
 import { compare } from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 
 
 @Injectable()
 export class AuthService {
+  constructor(
+    private PrismaService: PrismaService,
+    private JwtService: JwtService,
+  ) {};
 
-    constructor(private PrismaService: PrismaService, private JwtService: JwtService) { }
-
-    async getUsers() {
-        return await this.PrismaService.user.findMany()
-
+  async getUsers() {
+    return await this.PrismaService.user.findMany();
     }
 
     async singUp(user: createUserDto) {
@@ -21,7 +26,7 @@ export class AuthService {
             const userFound = await this.findUserByEmail(user.email);
             if (userFound) throw new BadRequestException("User Found");
 
-            const hashedPassword = await encrypt(user.password);
+            const hashedPassword = await hash(user.password, 10);
             const newUser = await this.PrismaService.user.create({
                 data: {
                     email: user.email,
